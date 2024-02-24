@@ -5,12 +5,16 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"sync"
+	"sync/atomic"
 
 	"log"
 
 	strutil "github.com/adrg/strutil"
 	"github.com/adrg/strutil/metrics"
 )
+
+var wg sync.WaitGroup
 
 func main() {
 	dictPath := "/Users/phil/Downloads/task_1/dict.txt"
@@ -28,17 +32,17 @@ func main() {
 
 	var result_map = make(map[int]string)
 
+	var counter atomic.Uint64
 	for i, query := range queriesList {
 		if _, found := dictSet[query]; found {
 			result_map[i] = query + " 0\n"
+			counter.Add(1)
 		} else {
-			myfunc(&result_map, i, query, &dictList, dictLen)
-		}
-
-		if i%100 == 0 {
-			fmt.Println(i)
+			wg.Add(1)
+			go myfunc(&result_map, i, query, &dictList, dictLen, &counter)
 		}
 	}
+	wg.Wait()
 
 	err = writeResults(result_map, resultPath)
 	if err != nil {
@@ -46,7 +50,9 @@ func main() {
 	}
 }
 
-func myfunc(result_map *map[int]string, i int, query string, dictList *[]string, dictLen int) {
+func myfunc(result_map *map[int]string, i int, query string, dictList *[]string, dictLen int, counter *atomic.Uint64) {
+	defer wg.Done()
+
 	var similarTuple struct {
 		index int
 		ratio float64
@@ -85,6 +91,11 @@ func myfunc(result_map *map[int]string, i int, query string, dictList *[]string,
 
 	} else {
 		(*result_map)[i] = "\n"
+	}
+
+	counter.Add(1)
+	if n := counter.Load(); n%100 == 0 {
+		fmt.Println(n)
 	}
 }
 
