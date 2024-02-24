@@ -1,5 +1,5 @@
 module E
 
-go 1.21.6
+go 1.22.0
 
 require github.com/adrg/strutil v0.3.1
