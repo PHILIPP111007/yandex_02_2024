@@ -49,7 +49,7 @@ func main() {
 	var result_map = make(map[int]string)
 	var counter atomic.Uint64
 	for i := 0; i < len(queries); i++ {
-		_func(&counter, result_map, i, queries[i], &universities)
+		go _func(&counter, result_map, i, queries[i], &universities)
 	}
 	wg.Wait()
 
